@@ -3,6 +3,8 @@ package com.example.dexencryptdemo;
 
 
 
+import com.example.dexencryptdemo.encrypt.IClass;
+
 //import com.example.dexencryptdemo.encrypt.ByteCrypt;
 
 import android.app.Activity;
@@ -20,7 +22,7 @@ public class MainActivity extends Activity {
 		
 		
 		
-		//IClass i = new IClass(this.getApplicationContext());
+		IClass i = new IClass(this.getApplicationContext());
 		
 		//String a = ByteCrypt.getString("yangzheng21333".getBytes());
 //        Toast.makeText(this.getApplicationContext(), a, Toast.LENGTH_SHORT).show();
