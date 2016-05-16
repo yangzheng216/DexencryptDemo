@@ -18,6 +18,9 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		hello.hello1();
+		
+		
+		
 		IClass i = new IClass(this.getApplicationContext());
 		
 		//String a = ByteCrypt.getString("yangzheng21333".getBytes());
