@@ -1,0 +1,3 @@
+1在控制台下进入项目主目录
+2运行ant dex-release
+3在项目主目录下生成加密后的文件dex/classes.dex

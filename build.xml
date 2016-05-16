@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="DexCryptDemo" default="help">
+	<taskdef resource="net/sf/antcontrib/antlib.xml">  
+    	<classpath>  
+        	<pathelement location="lib/ant-contrib-1.0b3.jar"/>  
+    	</classpath>
+	</taskdef>
+    <!-- The local.properties file is created and updated by the 'android' tool.
+         It contains the path to the SDK. It should *NOT* be checked into
+         Version Control Systems. -->
+    <property file="local.properties" />
+
+    <!-- The ant.properties file can be created by you. It is only edited by the
+         'android' tool to add properties to it.
+         This is the place to change some Ant specific build properties.
+         Here are some properties you may want to change/update:
+
+         source.dir
+             The name of the source directory. Default is 'src'.
+         out.dir
+             The name of the output directory. Default is 'bin'.
+
+         For other overridable properties, look at the beginning of the rules
+         files in the SDK, at tools/ant/build.xml
+
+         Properties related to the SDK location or the project target should
+         be updated using the 'android' tool with the 'update' action.
+
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems.
+
+         -->
+    <property file="ant.properties" />
+
+    <!-- if sdk.dir was not set from one of the property file, then
+         get it from the ANDROID_HOME env var.
+         This must be done before we load project.properties since
+         the proguard config can use sdk.dir -->
+    <property environment="env" />
+    <condition property="sdk.dir" value="${env.ANDROID_HOME}">
+        <isset property="env.ANDROID_HOME" />
+    </condition>
+
+    <!-- The project.properties file is created and updated by the 'android'
+         tool, as well as ADT.
+
+         This contains project specific properties such as project target, and library
+         dependencies. Lower level build properties are stored in ant.properties
+         (or in .classpath for Eclipse projects).
+
+         This file is an integral part of the build system for your
+         application and should be checked into Version Control Systems. -->
+    <loadproperties srcFile="project.properties" />
+
+    <!-- quick check on sdk.dir -->
+    <fail
+            message="sdk.dir is missing. Make sure to generate local.properties using 'android update project' or to inject it through the ANDROID_HOME environment variable."
+            unless="sdk.dir"
+    />
+
+    <!--
+        Import per project custom build rules if present at the root of the project.
+        This is the place to put custom intermediary targets such as:
+            -pre-build
+            -pre-compile
+            -post-compile (This is typically used for code obfuscation.
+                           Compiled code location: ${out.classes.absolute.dir}
+                           If this is not done in place, override ${out.dex.input.absolute.dir})
+            -post-package
+            -post-build
+            -pre-clean
+    -->
+    <import file="custom_rules.xml" optional="true" />
+
+    <!-- Import the actual build file.
+
+         To customize existing targets, there are two options:
+         - Customize only one target:
+             - copy/paste the target into this file, *before* the
+               <import> task.
+             - customize it to your needs.
+         - Customize the whole content of build.xml
+             - copy/paste the content of the rules files (minus the top node)
+               into this file, replacing the <import> task.
+             - customize to your needs.
+
+         ***********************
+         ****** IMPORTANT ******
+         ***********************
+         In all cases you must update the value of version-tag below to read 'custom' instead of an integer,
+         in order to avoid having your file be overridden by tools such as "android update project"
+    -->
+    <!-- version-tag: 1 -->
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+	
+    
+      <!--加密字符串的jar路径  -->   
+    <path id="lib_crypt_classpath">
+        <fileset dir="${basedir}/crypt/">
+            <include name="crypt.jar"/>
+        </fileset>
+    </path>
+    
+    <!-- 清理bin文件夹 -->
+    <target name="clean">
+       <delete dir="${basedir}/bin"/>
+    </target>
+    
+    <property name="cryptpath" value="${basedir}/src" />
+    
+    <!-- 加密字符串 -->
+    <target name="crypt" depends="clean">
+        <java classname="com.common.crypt.CryptOprator"
+            classpathref="lib_crypt_classpath"
+            >
+            <arg value="type:en"/>
+            <arg value="dirs:${cryptpath}"/>
+        </java>
+    </target>
+    <!-- 解密字符串 -->
+    <target name="decrypt">
+        <java classname="com.common.crypt.CryptOprator"
+            classpathref="lib_crypt_classpath"
+            >
+            <arg value="type:de"/>
+            <arg value="dirs:${cryptpath}"/>
+        </java>
+    </target>
+    
+    
+    <!-- 加密文件的jar路径 -->
+    <path id="lib_cryptlib_classpath">
+        <fileset dir="${basedir}/cryptlib/">
+            <include name="cryptlib.jar"/>
+        </fileset>
+    </path>
+    
+    
+    <property name="dexoutpath" value="${basedir}/out"/>
+    
+    <!-- 拷贝dex到输出目录 -->
+    <target name="dex-copy">
+        <copy file="${basedir}/bin/classes.dex" tofile="${dexoutpath}/classes.dex"/>
+    </target>
+    
+    <!-- ****need encrypt file name**** -->
+    <property name="filelist" value="classes.dex"/>
+    <!--加密文件dex  -->
+    <target name="dexEncrypt" depends="dex-copy">
+         <foreach list="${filelist}" target="dexEncrypt-foreach" param="filename" delimiter=",">        
+         </foreach>
+    </target>
+    <!-- 单个文件加密 -->
+    <target name="dexEncrypt-foreach">        
+            <echo>"${filename}"</echo>
+            <java classname="com.common.crypt.FileCrypt"
+            	classpathref="lib_cryptlib_classpath"
+            >
+            <arg value="${dexoutpath}/${filename}"/>
+        </java>
+   	</target>
+    <!-- 文件复原 -->  
+    
+    
+    
+    
+    <target
+        name="mydex-debug"
+        depends="-set-debug-mode, -compile, -post-compile" >
+
+        <!-- <delete dir="${out.classes.absolute.dir}/com/sprovider/interfaces" /> -->
+        <propertybyreplace
+            name="project.app.package.path"
+            input="${project.app.package}"
+            replace="."
+            with="/" />
+		
+        <delete>
+            <fileset
+                dir="${out.classes.absolute.dir}"
+                includes="${project.app.package.path}/*" />
+        </delete>
+         
+        <dex-helper/>
+    </target>
+    
+    <target
+        name="debug"
+        depends="mydex-debug"
+        >
+        <delete file="${basedir}/out/outer.jar" />
+
+        <jar destfile="${basedir}/out/outer.jar" >
+             <fileset
+                dir="${out.absolute.dir}"
+                includes="classes.dex" />
+        </jar>
+        <echo>${out.absolute.dir}</echo>
+    </target>
+    
+    
+    <target
+        name="mydex"
+        depends="-set-release-mode, -release-obfuscation-check, -compile, -post-compile, -obfuscate" >
+        <propertybyreplace
+            name="project.app.package.path"
+            input="${project.app.package}"
+            replace="."
+            with="/" />
+         
+         <if condition="${proguard.enabled}">
+            <then>
+                <jar destfile="filter.jar" >
+            		<zipfileset
+                		excludes="${project.app.package.path}/*"
+                		src="${obfuscated.jar.file}"/>
+         		</jar>
+		 		<echo>obfuscated.jar.file:${obfuscated.jar.file}</echo>
+        		<move
+            		file="filter.jar"
+            		tofile="${obfuscated.jar.file}" />
+            </then>
+            <else>
+                <delete>
+            		<fileset
+                		dir="${out.classes.absolute.dir}"
+                		includes="${project.app.package.path}/*" />
+        		</delete>
+            </else>
+         </if>
+        <dex-helper/>
+    </target>
+    
+    <target
+        name="dex-release"
+        depends="crypt,mydex,decrypt,dexEncrypt" >
+		<echo>out.absolute.dir:${out.absolute.dir}</echo>
+        <delete file="${basedir}/out/outer.jar" />
+        <jar destfile="${basedir}/out/outer.jar" >
+            <fileset
+                dir="${basedir}/out"
+                includes="classes.dex"/>
+        </jar>
+    </target>
+    
+    <!-- 
+    <target name="dx-test">
+        <dex executable="D:\Program Files (x86)\Android\android-sdk\build-tools\23.0.3\dx.bat"
+                output="${basedir}/dx"
+        >
+            <path path="${basedir}/dxo"/>
+        </dex>
+    </target>
+    
+    
+    <macrodef name="testing">
+   <attribute name="v" default="NOT SET"/>
+   <element name="some-tasks" optional="yes"/>
+   <sequential>
+      <echo>v is @{v}</echo>
+      <some-tasks/>
+   </sequential>
+	</macrodef>
+	<target name="123456">
+    <testing v="This is v">
+	   <some-tasks>
+	      <echo>this is a test</echo>
+	   </some-tasks>
+	</testing>
+	
+</target> -->
+
+    
+</project>
